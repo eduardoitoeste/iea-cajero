@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow , ipcMain } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -20,11 +20,14 @@ protocol.registerSchemesAsPrivileged([
 function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    minWidth :1080, 
+    minHeight :720,
+    autoHideMenuBar :true,
+    center : true,
+    show: true, 
     webPreferences: {
       nodeIntegration: true
-    }
+    } 
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -37,7 +40,7 @@ function createWindow() {
     win.loadURL('app://./index.html')
     autoUpdater.checkForUpdatesAndNotify()
   }
-
+  win.maximize()
   win.on('closed', () => {
     win = null
   })
@@ -94,3 +97,22 @@ if (isDevelopment) {
     })
   }
 }
+
+ipcMain.on('app_version', (event) => {
+  event.sender.send('app_version', { version: app.getVersion() });
+});
+
+ipcMain.on('restart_app', () => {
+  // console.log('restart')
+  // app.relaunch()
+  // app.exit()
+  autoUpdater.quitAndInstall();
+});
+
+autoUpdater.on('update-available', () => { 
+  event.sender.send('update_available',{text:'Hay una nueva actualizacion disponible!',view:true,type:'warning',viewButtonReinicio:false});
+});
+
+autoUpdater.on('update-downloaded', function (info) {
+  event.sender.send('update_downloaded',{text:'La actualizacion ha terminado de descargar',view:true,type:'success',viewButtonReinicio:true});
+});
